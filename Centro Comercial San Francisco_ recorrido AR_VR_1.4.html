@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Centro Comercial San Francisco: recorrido AR/VR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eaf0f2;--card:#fff;--ink:#0f2530;--mut:#52687a;--line:#cdd9df;--acc:#b8156a;--lago:#10364a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1d27;--card:#162b38;--ink:#e6eef2;--mut:#98b0bf;--line:#2a4252;--acc:#f06bb0}}
+:root[data-theme="dark"]{--bg:#0d1d27;--card:#162b38;--ink:#e6eef2;--mut:#98b0bf;--line:#2a4252;--acc:#f06bb0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:inherit}[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:15px/1.5 Figtree,system-ui,sans-serif}
+h1,h2,h3{font-family:'Bricolage Grotesque',Georgia,serif;margin:0}
+header{background:var(--lago);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+h1{font-size:1.25rem}header p{margin:0;font-size:.85rem;opacity:.8}
+button{font:inherit;cursor:pointer;color:inherit}
+.bar{display:flex;gap:6px;flex-wrap:wrap}
+.bar button{background:transparent;color:#fff;border:1px solid #ffffff77;border-radius:8px;padding:6px 12px}
+.bar button[aria-pressed=true]{background:#fff;color:var(--lago)}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px}
+#stage{position:relative;min-height:0;background:#10364a}
+#stage canvas{width:100%;height:100%;display:block;touch-action:none}
+#pad{position:absolute;left:12px;bottom:12px;display:flex;gap:8px}
+#pad button{background:#0f2530cc;color:#fff;border:1px solid #ffffff55;border-radius:8px;padding:10px 14px;touch-action:none;user-select:none}
+#toast{position:absolute;left:12px;right:12px;top:12px;background:#0f2530ee;color:#fff;padding:10px 14px;border-radius:8px}
+aside{overflow:auto;background:var(--card);border-left:1px solid var(--line);padding:14px}
+.tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px;color:var(--mut)}
+.tabs button[aria-selected=true]{border-color:var(--acc);color:var(--ink);font-weight:600}
+input{width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+#chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+#chips button,#list button{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.82rem}
+#chips button[aria-pressed=true]{border-color:var(--acc);font-weight:600}
+i{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:6px}
+#card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+#card h2{font-size:1.3rem}#card h3{font-size:.95rem;margin:10px 0 2px}
+#card ul{margin:0;padding-left:18px}#card .loc,.vacio{color:var(--mut);font-size:.88rem}
+#go,#r button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:7px 12px;margin-top:8px}
+#list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+#list button{width:100%;text-align:left;border-radius:8px;display:flex;align-items:center}
+#list button span{margin-left:auto;padding-left:8px;color:var(--mut);font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#list button[aria-current]{border-color:var(--acc)}
+#r h3{margin-top:14px}#r p{margin:2px 0 0}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+@media(max-width:820px){main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}aside{border-left:0;border-top:1px solid var(--line)}}
+</style></head>
+<body>
+<header><div><h1>Centro Comercial San Francisco</h1><p>Puno: simulación AR/VR con 166 stands</p></div>
+<div class="bar"><button id="mw" aria-pressed="true">Recorrido</button><button id="ma" aria-pressed="false">Vista aérea</button><button id="vr" hidden>Entrar en VR</button><button id="ar" hidden>Ver en AR</button></div></header>
+<main>
+<section id="stage"><div id="pad"><button id="fw" aria-label="Avanzar">Avanzar</button><button id="bk" aria-label="Retroceder">Atrás</button></div><div id="toast" role="status" hidden></div></section>
+<aside>
+<nav class="tabs" role="tablist"><button role="tab" aria-selected="true" data-t="d">Directorio</button><button role="tab" aria-selected="false" data-t="r">Recomendaciones</button></nav>
+<div id="d"><input id="q" type="search" placeholder="Buscar por titular o número" aria-label="Buscar stands"><div id="chips"></div><div id="card" aria-live="polite"></div><ul id="list"></ul>
+<p class="vacio">Arrastra para mirar; usa W A S D o las flechas para caminar. Los botones VR y AR aparecen solo en dispositivos compatibles (por ejemplo Meta Quest; AR en Android con Chrome). Los titulares y la ubicación vienen del croquis; los bienes y servicios aún no están registrados.</p></div>
+<div id="r" hidden>
+<h2>Recomendaciones para innovación digital</h2>
+<h3>1. Catálogo digital con QR</h3><p>Un código QR en cada letrero que abra la ficha del stand (bienes, servicios, contacto) sin instalar ninguna app.</p>
+<h3>2. Una sola fuente de datos</h3><p>Un padrón único (stand, rubro, bienes, servicios, WhatsApp) que alimente el plano, la web y los QR, con un responsable de mantenerlo al día.</p>
+<h3>3. Pagos digitales</h3><p>QR de Yape o Plin y POS en cada stand, con un reporte simple de ventas para el comerciante.</p>
+<h3>4. WhatsApp Business</h3><p>Catálogo, respuestas automáticas y pedidos con recojo en el stand.</p>
+<h3>5. Presencia en Google</h3><p>Perfil de empresa y fotos 360° del centro comercial para que los clientes encuentren cada stand antes de llegar.</p>
+<h3>6. Analítica con respeto a los datos</h3><p>Medir toques por stand en el recorrido y escaneos de QR para decidir campañas y rubros; informar y proteger los datos personales (Ley 29733).</p>
+<h3>7. Campañas y fidelización</h3><p>Cupones por QR y promociones en fechas fuertes: Candelaria, Día de la Madre, campaña escolar y Navidad.</p>
+<h3>8. Capacitación y continuidad</h3><p>Talleres cortos para comerciantes, Wi-Fi estable en el local y respaldos del padrón.</p>
+<h3>Ruta sugerida</h3><p>Meses 1 a 3: padrón y QR. Meses 4 a 6: pagos, WhatsApp y Google. Meses 7 a 12: analítica, campañas y AR para visitantes.</p>
+</div>
+</aside></main>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const norm=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+// Datos reales: croquis del Mercado San Francisco (n.° de orden, titular, sección y puesto).
+// Los bienes y servicios no figuran en el croquis: completar bienes:[...] y servicios:[...] en cada stand.
+const SEC=['A','B','C','D','E','F','G','J','K','L','M','N'];
+const COL={A:'#d1495b',B:'#e07b39',C:'#b8156a',D:'#2a7de1',E:'#5b4bd6',F:'#9b59d0',G:'#6b7b83',J:'#e0a526',K:'#17a2a2',L:'#3fae6a',M:'#a0522d',N:'#2f6f9f'};
+const OV={71:['F',1],129:['K',13]}; // el croquis los dibuja en esos bloques aunque su código dice E-1 y J-13
+const D=[
+[1,"LOURDES MARIA CRUZ DE APAZA","A",1],
+[2,"ANDRES AVELINO APAZA HUISA","A",2],
+[3,"DOMINGA CRUZ VIUDA DE FLORES","A",3],
+[4,"EVA SOFIA PARISACA VIUDA DE PEREZ","A",4],
+[5,"GENARA CRUZ DE TACA","A",5],
+[6,"AYDE CECILIA CENTENO MOLINA","A",6],
+[7,"EVA ROXANA APAZA CRUZ","A",7],
+[8,"OLGA HUARACHI ANCCO","A",8],
+[9,"JUANA ARGAMA TAPIA","A",9],
+[10,"CORINA MARUJA FLORES FLORES","A",10],
+[11,"JONATHAN HENRY QUISPE CHARA","A",11],
+[12,"ALBERTINA ZUÑIGA SACACA","A",12],
+[13,"MARIANO POMA VELASQUEZ","A",13],
+[14,"GONZALO QUISPE CONDORI","A",14],
+[15,"GUISELA MENDOZA MAMANI","B",1],
+[16,"OSVALDO ANCCO HUALPA","B",2],
+[17,"RUTH APAZA MAMANI","B",3],
+[18,"GRACIELA AÑAMURO COAQUIRA","B",4],
+[19,"ALICIA MAMANI DURAN","B",5],
+[20,"LUCIANO FLORES LIMACHE","B",6],
+[21,"MARICRUZ MARLENY QUISPE ARGAMA","B",7],
+[22,"ANA QUILCA PASTOR","B",8],
+[23,"ROSARIO LUZ VILLALTA FLORES","B",9],
+[24,"CARMEN VILLALTA GUTIERREZ","B",10],
+[25,"DUNIA SOLEDAD MACHACA HUARACO","B",11],
+[26,"OLGA MARINA ESTAÑA CHOQUE","B",12],
+[27,"NELLY SONIA ALBARRACIN CHURA","B",13],
+[28,"FRANCISCA SALLUCA MAMANI","B",14],
+[29,"MARCUSA MAMANI VARGAS","C",1],
+[30,"ALBERT ANTONIO ALZAMORA BEJAR","C",2],
+[31,"MARTINA ALVAREZ VIUDA DE VILCA","C",3],
+[32,"HERLINDA LOURDES PEREYRA MENDIZABAL","C",4],
+[33,"REGINA MAMANI MAMANI","C",5],
+[34,"DANNIEL RUELAS FLORES","C",6],
+[35,"MARGARITA COYLA QUISCA DE PARI","C",7],
+[36,"CRISTINA SEBASTIANA LLANQUE DE VARGAS","C",8],
+[37,"JULIA HILASACA YUNYAS","C",9],
+[38,"JESUS AGUEDO FLORES RIOS","C",10],
+[39,"ISABEL CONDORI DE QUISPE","C",11],
+[40,"IRMA YESENIA NUÑEZ CHOQUE","C",12],
+[41,"PASCUALA IGNACIA CHOQUE TITO VDA.DEN","C",13],
+[42,"AURELIANA JULIA APAZA QUISPE","C",14],
+[43,"CARMEN ROSA RUELAS YANQUI","D",1],
+[44,"ROSA LUZ CHOQUE RUELAS","D",2],
+[45,"NILDA NICOLAZA CURO MAMANI","D",3],
+[46,"VALENTIN CAYLLHUA COAQUIRA","D",4],
+[47,"GLISERIA CHOQUE TITO DE APAZA","D",5],
+[48,"DOMITILA VARGAS DE MAMANI","D",6],
+[49,"PAULA CARITA CHOQUECAHUA","D",7],
+[50,"GINA MARIELA QUISPE BENAVENTE","D",8],
+[51,"KELLY XIOMARA RAMOS TAPIA","D",9],
+[52,"WALTER FRANCISCO RAMOS ALAVE","D",10],
+[53,"PAULA GENARA ALATA FLORES","D",11],
+[54,"FULGENCIO ALVAREZ TICONA","D",12],
+[55,"LUIS ENRIQUE LIRA OBANDO","D",13],
+[56,"JUDITH MARCELINA RUELAS FLORES","D",14],
+[57,"JUANA FRANSISCA ALCA ASQUI","E",1],
+[58,"MARIELA LAVILLA CALLOAPAZA","E",2],
+[59,"ANTONIA LLUTARI COLLA","E",3],
+[60,"OSWALDA GARAMBEL DE MENENDEZ","E",4],
+[61,"GLENY SONIA MENENDES GARAMBEL","E",5],
+[62,"TOMAS VENEGAS YUPANQUI","E",6],
+[63,"SABINA QUISPE HUARICALLO","E",7],
+[64,"MARIBEL PINEDA COILA","E",8],
+[65,"YAMILE YANDIRA RUELAS FIGUEROA","E",9],
+[66,"VILMA CURASI CURASI","E",10],
+[67,"INEZ UCHASARA QUISPE","E",11],
+[68,"JUANA MAMANI MAYTA","E",12],
+[69,"JUANA PARRILLO CRUZ","E",13],
+[70,"TOMAS CALLACONDO HUANAHUARA","E",14],
+[71,"JUAN FRANCISCO CURASI CURASI","E",1],
+[72,"MARICELA INOFUENTE MAMANI","F",2],
+[73,"PEDRO ROBERTO AROQUIPA MELO","F",3],
+[74,"VICTOR GODOFREDO LOPEZ APAZA","F",4],
+[75,"LESMERTHANY COLQUE RAMOS","F",5],
+[76,"GLADIS CURASI CURASI","F",6],
+[77,"ILDA MAMANI RAMOS","F",7],
+[78,"JUANA EPIFANIA PEREZ HUANCA","F",8],
+[79,"LIBORIA ROSARIA MANSILLA CORONEL","F",9],
+[80,"MARIA DUEÑAS DE BURGOS","F",10],
+[81,"MARLENE APAZA NINA","F",11],
+[82,"OLGA CLOTILDE CHINO CHOQUE","F",12],
+[83,"CESARIA SEBASTIAN GUZMAN MAMANI","F",13],
+[84,"NIEVES C. CURASI VDA DE CURASI","F",14],
+[85,"IDELMIRA AYDE ALVAREZ LAYME","G",1],
+[86,"BONIFACIA JUSTINA ALATA FLORES","G",2],
+[87,"MARIA CCOPA ROQUE","G",3],
+[88,"MARIA MARIA QUISPE PAUCAR","G",4],
+[89,"SOFIA CHOQUE COSSI","G",5],
+[90,"MARGARITA JULIA ZAPANA QUISPE","G",6],
+[91,"ESTEFA LIDIA QUISPE PARRILLO","G",7],
+[92,"LUCIA ROMULA GONZALES YAÑEZ","G",8],
+[93,"CANDIDA PULINA COILA DE PINEDA","G",9],
+[94,"MARCELINA CABANA HERRERA","G",10],
+[95,"SANTUSA SURCO CCORIMANYA","G",11],
+[96,"REYNA ROBERTA CASTILLLO CHOQUE","G",12],
+[97,"GLADYS YENY CURASI TUYO","G",13],
+[98,"SUSANA QUISPE COILA","G",14],
+[99,"GUIANELA ESCALANTE CARITA","G",15],
+[100,"NELIDA CONORI CUEVAS","G",16],
+[101,"CANDELARIA CRUZ RAMOS","J",1],
+[102,"GABRIELA DEL PILAR CONDORI YUCRA","J",2],
+[103,"YOBANA QUILCA AMPUERO","J",3],
+[104,"ISABEL CONDORI CCAMA","J",4],
+[105,"CIDONELIA ELVIRA CARBAJAL ZULUAGA","J",5],
+[106,"MARIA SANCHEZ CHARCA","J",6],
+[107,"ROCIO MARIBEL MAMANI CHAMBILLA","J",7],
+[108,"ZENOBIA BURGOS MITA","J",8],
+[109,"PETRONILA PACOMPIA BELIZARIO","J",9],
+[110,"YANET CHILO VEGA","J",10],
+[111,"JOSE NINA PAREDES","J",11],
+[112,"VIRGINIA AURELIANA RAMIREZ VARGAS","J",12],
+[113,"OFELIA ERIKA RAMIREZ MAYTA","J",13],
+[114,"YAMILET LUCERO PROVINCIA BELON","J",14],
+[115,"JULIA MAMANI CONDORI","J",15],
+[116,"VICTOR PUMAHUALCA PALOMINO","J",16],
+[117,"LUIS CENTENO CORIMANYA","K",1],
+[118,"MARIA MELO ZAPATA","K",2],
+[119,"DAMIANA FLORENTINA APAZA PEREZ","K",3],
+[120,"AURORA FLORA CAHUANA OLGUIN","K",4],
+[121,"HILDA NUÑEZ QUISPE DE CURO","K",5],
+[122,"JOEL MARCOS YANCAPALLO MANUEL","K",6],
+[123,"MERCEDES CHANINI CHOQUE DE RAMOS","K",7],
+[124,"GLLADYS RUTH ANDRADE PEREZ","K",8],
+[125,"ROSENDO AYALA COQUE","K",9],
+[126,"ANGELA CHOQUE HUALLPA","K",10],
+[127,"NINA OROSCO DELGADO","K",11],
+[128,"MARINA LUZAR MAMANI GUTIERREZ","K",12],
+[129,"KELLY CAPIA TINTAYA","J",13],
+[130,"LIVIA VENEGAS YUPANQUI","K",14],
+[131,"EVA QUISPE BELLIDO","K",15],
+[132,"ANA LUISA NUÑEZ PANCA","K",16],
+[133,"JUSTA MARTINA ARI CALLA","L",1],
+[134,"MICHELLE GUTIERREZ MAMANI","L",2],
+[135,"MARUJA ALEJNDRINA TICONA ALCOS","L",3],
+[136,"GREGORIA DIAS QUISPE","L",4],
+[137,"ALEJA CARBAJAL FLORES","L",5],
+[138,"LORENZA ZAPANA CALLA","L",6],
+[139,"YANETH MAGALI CHATA ZAPANA","L",7],
+[140,"PLACIDA MAYTA MENDOZA","L",8],
+[141,"AGUSTINA MAMANI MAMANI","L",9],
+[142,"YAKELIN DUEÑAS PALOMINO","L",10],
+[143,"CATALINA PALOMINO BURGOS","L",11],
+[144,"ELSA CHEJE HANCO","L",12],
+[145,"NATI VELARDE COYLA","L",13],
+[146,"ANA VELARDE COYLA","L",14],
+[147,"CONCEPCION ALVAREZ MAMANI","M",1],
+[148,"FIDEL ALEJANDRO JOSEC ZAPANA","M",2],
+[149,"JUANA CYNTHIA RUELAS FLORES","M",3],
+[150,"MARIA MAMANI SOSA","M",4],
+[151,"MARCELINA CELESTINA SOSA CASTRO","M",5],
+[152,"INES SEFERINA CHURATA ZEA","M",6],
+[153,"MARIBEL QUISPE LORENZO","M",7],
+[154,"PAULINA ARGAMA TAPIA","M",8],
+[155,"MARCELINA ARRATIA TONCCONI","M",9],
+[156,"HERMENEGILDA LEON CHOQUECAHUA","M",10],
+[157,"EUFRACIA HILARIA MENESES QUISPE","M",11],
+[158,"RAMONA TUYO PACOTICONA","M",12],
+[159,"AGRIPINA COLQUE VERA","M",13],
+[160,"ROBERTA DUEÑAS CALLA DE IBEROS","M",14],
+[161,"ROSALIA MAMANI JAHUIRA","N",1],
+[162,"ISABEL HUANCA PINEDA","N",2],
+[163,"ROSA MENDOZA TICAHUANCA","N",3],
+[164,"SINDY VILLALTA QUILCA","N",4],
+[165,"MOISES MAMANI SUCARI","N",5],
+[166,"CELESTINA QUISPE PARRILLO","N",6]];
+const S=D.map(([id,titular,sec,pto])=>{const o=OV[id]||[sec,pto];return{id,titular,cod:sec+'-'+pto,sec:o[0],pto:o[1],col:COL[o[0]],bienes:[],servicios:[]}});
+
+// Escena
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));$('#stage').prepend(renderer.domElement);
+renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local-floor');
+const scene=new THREE.Scene(),BG=new THREE.Color('#10364a');scene.background=BG;
+const cam=new THREE.PerspectiveCamera(65,1,.1,300),dolly=new THREE.Group(),world=new THREE.Group();
+dolly.add(cam);scene.add(dolly,world);
+scene.add(new THREE.AmbientLight(0xffffff,.85));const sun=new THREE.DirectionalLight(0xffffff,.6);sun.position.set(20,40,30);scene.add(sun);
+function tex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'));return new THREE.CanvasTexture(c)}
+const WD=2.6,floor=new THREE.Mesh(new THREE.PlaneGeometry(62,64),new THREE.MeshLambertMaterial({color:0xcfd5d8}));floor.rotation.x=-Math.PI/2;world.add(floor);
+const wm=new THREE.MeshLambertMaterial({color:0xe9e4d8});
+[[62,.4,0,-32],[.4,64,-31,0],[.4,64,31,0],[27,.4,-17.5,32],[27,.4,17.5,32]].forEach(([w,d,x,z])=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,5,d),wm);m.position.set(x,2.5,z);world.add(m)});
+function decal(t,x,z,w){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,w/4),new THREE.MeshBasicMaterial({map:tex(256,64,g=>{g.fillStyle='#10364a';g.font='700 38px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,128,34)}),transparent:true}));m.rotation.x=-Math.PI/2;m.position.set(x,.02,z);world.add(m)}
+// Distribución según el croquis: G en la pared norte; seis filas de islas (izquierda F a A, derecha M a J); N junto a la pared este.
+const RZ={F:-19.8,M:-19.8,E:-11.2,L:-11.2,D:-2.6,K:-2.6,C:6,J:6,B:14.6,A:23.2};
+const BL={F:[14,-22.6],E:[14,-22.6],D:[14,-22.6],C:[14,-22.6],B:[14,-22.6],A:[14,-22.6],M:[14,4.4],L:[14,4.4],K:[16,4.4],J:[16,4.4]};
+function slot(sec,p){
+ if(sec==='G')return{x:(p-8.5)*WD,z:-27.7,fx:0,fz:1};
+ if(sec==='N')return{x:28.8,z:-4+3.6*(6-p),fx:-1,fz:0};
+ const[n,x0]=BL[sec],h=n/2,zc=RZ[sec];
+ return p<=h?{x:x0+(p-.5)*WD,z:zc+1.3,fx:0,fz:1}:{x:x0+(n-p+.5)*WD,z:zc-1.3,fx:0,fz:-1}}
+Object.keys(RZ).forEach(x=>decal('Sección '+x,'FEDCBA'.includes(x)?-2.2:2.2,RZ[x],4));decal('Sección G',0,-24.4,4);decal('Entrada',0,29,8);
+const shelfM=new THREE.MeshLambertMaterial({color:0xe9e4d8}),gC=new THREE.BoxGeometry(2.4,1,.8),gS=new THREE.BoxGeometry(2.4,2.4,.3),gR=new THREE.BoxGeometry(2.6,.12,2.6),gN=new THREE.PlaneGeometry(1.5,.75),pick=[];
+S.forEach(s=>{
+ Object.assign(s,slot(s.sec,s.pto));s.mat=new THREE.MeshLambertMaterial({color:s.col});
+ const g=new THREE.Group();g.position.set(s.x,0,s.z);g.rotation.y=Math.atan2(s.fx,s.fz);
+ const add=(geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.userData.s=s;g.add(o);pick.push(o)};
+ add(gC,s.mat,0,.5,.9);add(gS,shelfM,0,1.2,-1.15);add(gR,s.mat,0,2.6,0);
+ add(gN,new THREE.MeshBasicMaterial({map:tex(128,64,g=>{g.fillStyle=s.col;g.fillRect(0,0,128,64);g.fillStyle='#fff';g.font='700 40px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(s.id,64,34)})}),0,3.15,1.25);
+ world.add(g)});
+const ring=new THREE.Mesh(new THREE.RingGeometry(1,1.25,40),new THREE.MeshBasicMaterial({color:0xff3d9a,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.04;ring.visible=false;world.add(ring);
+
+// Estado y filtros
+let sel=null,filt=null,q='',mode='walk',px=0,pz=28,yaw=0,pitch=0,az=0,el=1,rad=85,hold=0,xrKind='';const keys=new Set();
+const ok=s=>(filt===null||s.sec===filt)&&(!q||norm(s.titular+' '+s.sec+' '+s.id).includes(q));
+function chips(){$('#chips').innerHTML=SEC.map(x=>`<button data-i="${x}" aria-pressed="${filt===x}"><i style="background:${COL[x]}"></i>Sección ${x}</button>`).join('')}
+function list(){$('#list').innerHTML=S.filter(ok).map(s=>`<li><button data-id="${s.id}"${sel&&sel.id===s.id?' aria-current="true"':''}><i style="background:${s.col}"></i>Stand ${s.id}<span>${s.titular}</span></button></li>`).join('')||'<li class="vacio">Ningún stand coincide. Quita el filtro o cambia la búsqueda.</li>'}
+function card(s){$('#card').innerHTML=s?`<h2>Stand ${s.id}</h2><p class="loc"><i style="background:${s.col}"></i>Sección ${s.sec}</p><h3>Titular</h3><p style="margin:0">${s.titular}</p>${s.bienes.length?`<h3>Bienes</h3><ul>${s.bienes.map(b=>`<li>${b}</li>`).join('')}</ul><h3>Servicios</h3><ul>${s.servicios.map(b=>`<li>${b}</li>`).join('')}</ul>`:`<h3>Bienes y servicios</h3><p class="loc" style="margin:0">Aún no registrados para este stand.</p>`}<p class="loc">Código en el croquis: ${s.cod}</p><button id="go">Ir a este stand</button>`:'<p class="vacio">Toca un stand en el plano 3D o elige uno de la lista para ver su ficha.</p>'}
+function refresh(){S.forEach(s=>s.mat.color.set(ok(s)?s.col:'#9aa7ae'));chips();list()}
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,5000)}
+
+// Panel dentro de VR/AR
+const pc=document.createElement('canvas');pc.width=640;pc.height=480;const pt=new THREE.CanvasTexture(pc);
+const panel=new THREE.Mesh(new THREE.PlaneGeometry(1.6,1.2),new THREE.MeshBasicMaterial({map:pt}));panel.visible=false;scene.add(panel);
+function xrPanel(s){const g=pc.getContext('2d');g.fillStyle='#10364a';g.fillRect(0,0,640,480);g.fillStyle=s.col;g.fillRect(0,0,640,16);g.fillStyle='#fff';g.font='700 34px sans-serif';g.fillText(`Stand ${s.id}, sección ${s.sec}`,24,70);
+ let y=130;[['Titular',[s.titular]],['Bienes y servicios',s.bienes.length?s.bienes.concat(s.servicios):['Aún no registrados']]].forEach(([t,a])=>{g.font='700 28px sans-serif';g.fillStyle='#f6a8cf';g.fillText(t,24,y);g.font='400 28px sans-serif';g.fillStyle='#fff';a.forEach(x=>{y+=38;g.fillText(x,24,y)});y+=56});
+ g.font='400 24px sans-serif';g.fillStyle='#9fc0d0';g.fillText(`Código en el croquis: ${s.cod}`,24,452);pt.needsUpdate=true;
+ const xc=renderer.xr.getCamera(cam),p=new THREE.Vector3(),d=new THREE.Vector3(),vr=xrKind==='vr';xc.getWorldPosition(p);xc.getWorldDirection(d);d.y=0;d.normalize();
+ panel.scale.setScalar(vr?1:.3);panel.position.copy(p).addScaledVector(d,vr?2:.8);panel.lookAt(p);panel.visible=true}
+
+function select(s){sel=s;ring.visible=true;ring.position.set(s.x,.04,s.z);card(s);list();$('aside').scrollTop=0;if(renderer.xr.isPresenting)xrPanel(s)}
+function fly(s){setMode('walk');px=s.x+s.fx*3;pz=s.z+s.fz*3;yaw=Math.atan2(s.fx,s.fz);pitch=.12}
+function setMode(m){mode=m;$('#mw').setAttribute('aria-pressed',m==='walk');$('#ma').setAttribute('aria-pressed',m==='air');$('#pad').hidden=m==='air'}
+
+// Entradas
+const rc=new THREE.Raycaster(),m2=new THREE.Vector2(),cv=renderer.domElement;let dn=null;
+cv.addEventListener('pointerdown',e=>dn={x:e.clientX,y:e.clientY,m:0});
+cv.addEventListener('pointermove',e=>{if(!dn||!e.buttons)return;const dx=e.clientX-dn.x,dy=e.clientY-dn.y;dn.x=e.clientX;dn.y=e.clientY;dn.m+=Math.abs(dx)+Math.abs(dy);
+ if(mode==='walk'){yaw-=dx*.005;pitch=clamp(pitch-dy*.005,-1.2,1.2)}else{az-=dx*.005;el=clamp(el+dy*.005,.35,1.5)}});
+cv.addEventListener('pointerup',e=>{if(dn&&dn.m<6){const r=cv.getBoundingClientRect();m2.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);rc.setFromCamera(m2,cam);const h=rc.intersectObjects(pick,false)[0];if(h)select(h.object.userData.s)}dn=null});
+cv.addEventListener('wheel',e=>{e.preventDefault();rad=clamp(rad+e.deltaY*.05,30,130)},{passive:false});
+addEventListener('keydown',e=>{if(e.target.tagName!=='INPUT')keys.add(e.key.length===1?e.key.toLowerCase():e.key)});addEventListener('keyup',e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
+[['#fw',1],['#bk',-1]].forEach(([id,v])=>{const b=$(id);b.onpointerdown=()=>hold=v;['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>hold=0))});
+$('#mw').onclick=()=>setMode('walk');$('#ma').onclick=()=>setMode('air');
+$('#q').oninput=e=>{q=norm(e.target.value.trim());refresh()};
+$('#chips').onclick=e=>{const b=e.target.closest('button');if(b){const i=b.dataset.i;filt=filt===i?null:i;refresh()}};
+$('#list').onclick=e=>{const b=e.target.closest('button');if(b){const s=S[b.dataset.id-1];select(s);fly(s)}};
+$('#card').onclick=e=>{if(e.target.id==='go'&&sel)fly(sel)};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));$('#d').hidden=b.dataset.t!=='d';$('#r').hidden=b.dataset.t!=='r'});
+
+// VR y AR
+for(let i=0;i<2;i++){const c=renderer.xr.getController(i);
+ c.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(0,0,-10)]),new THREE.LineBasicMaterial({color:0xffffff})));
+ c.addEventListener('selectstart',()=>{rc.ray.origin.setFromMatrixPosition(c.matrixWorld);rc.ray.direction.set(0,0,-1).applyMatrix4(new THREE.Matrix4().extractRotation(c.matrixWorld));
+  const h=rc.intersectObjects([...pick,floor],false)[0];if(!h)return;
+  if(h.object===floor){if(xrKind==='vr'){dolly.position.x=h.point.x;dolly.position.z=h.point.z}}else select(h.object.userData.s)});
+ dolly.add(c)}
+async function startXR(k){try{xrKind=k;const s=await navigator.xr.requestSession('immersive-'+k,{optionalFeatures:['local-floor']});renderer.xr.setSession(s)}catch(e){xrKind='';toast('No se pudo iniciar '+k.toUpperCase()+'. Abre la página en su propia pestaña, con HTTPS y un dispositivo compatible.')}}
+renderer.xr.addEventListener('sessionstart',()=>{dolly.rotation.y=0;if(xrKind==='ar'){scene.background=null;dolly.position.set(0,0,0);world.scale.setScalar(.02);world.position.set(0,.8,-1.4)}else dolly.position.set(0,0,28)});
+renderer.xr.addEventListener('sessionend',()=>{scene.background=BG;world.scale.setScalar(1);world.position.set(0,0,0);panel.visible=false;xrKind=''});
+if(navigator.xr)['vr','ar'].forEach(k=>navigator.xr.isSessionSupported('immersive-'+k).then(v=>{if(v){$('#'+k).hidden=false;$('#'+k).onclick=()=>startXR(k)}}).catch(()=>{}));
+
+// Bucle
+function resize(){const r=$('#stage').getBoundingClientRect();renderer.setSize(r.width,r.height,false);cam.aspect=r.width/Math.max(r.height,1);cam.updateProjectionMatrix()}
+new ResizeObserver(resize).observe($('#stage'));
+let last=0;
+renderer.setAnimationLoop(t=>{const dt=Math.min((t-last)/1000||0,.1);last=t;
+ if(!renderer.xr.isPresenting){
+  if(mode==='walk'){const f=(keys.has('w')||keys.has('ArrowUp')?1:0)-(keys.has('s')||keys.has('ArrowDown')?1:0)+hold,sd=(keys.has('d')||keys.has('ArrowRight')?1:0)-(keys.has('a')||keys.has('ArrowLeft')?1:0),v=5*dt;
+   px=clamp(px+(-Math.sin(yaw)*f+Math.cos(yaw)*sd)*v,-30,30);pz=clamp(pz+(-Math.cos(yaw)*f-Math.sin(yaw)*sd)*v,-30,31);
+   dolly.position.set(px,0,pz);dolly.rotation.y=yaw;cam.position.set(0,1.65,0);cam.rotation.set(pitch,0,0)}
+  else{dolly.position.set(0,0,0);dolly.rotation.y=0;cam.position.set(rad*Math.sin(az)*Math.cos(el),rad*Math.sin(el),rad*Math.cos(az)*Math.cos(el));cam.lookAt(0,0,2)}}
+ renderer.render(scene,cam)});
+card(null);refresh();resize();
+</script>
+</body></html>
